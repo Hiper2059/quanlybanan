@@ -11,23 +11,23 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quanlybanan.R;
-
+import com.example.quanlybanan.adapter.TableAdapter;
 import com.example.quanlybanan.database.DBHelper;
-
+import com.example.quanlybanan.model.Table;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
 import java.util.ArrayList;
+import androidx.appcompat.widget.Toolbar;
 
 public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
+    TableAdapter adapter;
+    ArrayList<Table> tableList;
     DBHelper db;
     FloatingActionButton btnAdd;
     SharedPreferences prefs;
@@ -50,16 +50,129 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-
+        recyclerView = findViewById(R.id.recyclerView);
+        btnAdd = findViewById(R.id.btnAdd);
         db = new DBHelper(this);
 
+        tableList = new ArrayList<>();
+        adapter = new TableAdapter(tableList, new TableAdapter.OnTableListener() {
+            @Override
+            public void onEdit(int position) {
+                showEditDialog(position);
+            }
+            @Override
+            public void onDelete(int position) {
+                deleteTable(position);
+            }
 
+        });
+
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        recyclerView.setAdapter(adapter);
+
+        btnAdd.setOnClickListener(v -> showAddDialog());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadTables();
+    }
+
+    private void loadTables() {
+        tableList.clear();
+        Cursor cursor = db.getAllTables();
+        if (cursor != null) {
+            int idCol = cursor.getColumnIndex("id");
+            int seatsCol = cursor.getColumnIndex("seats");
+            int statusCol = cursor.getColumnIndex("status");
+
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(idCol);
+                int seats = cursor.getInt(seatsCol);
+                String status = cursor.getString(statusCol);
+                tableList.add(new Table(id, seats, status));
+            }
+            cursor.close();
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    private void showAddDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table, null);
+        EditText edtSeats = dialogView.findViewById(R.id.edtSeats);
+        EditText edtStatus = dialogView.findViewById(R.id.edtStatus);
+
+        // Giờ đây EditText sẽ trống và cho phép người dùng nhập tự do
+
+        new AlertDialog.Builder(this)
+                .setTitle("Thêm bàn mới")
+                .setView(dialogView)
+                .setPositiveButton("Thêm", (dialog, which) -> {
+                    String seatsStr = edtSeats.getText().toString().trim();
+                    // Lấy trạng thái từ người dùng nhập
+                    String status = edtStatus.getText().toString().trim();
+
+                    // Kiểm tra cả hai trường không được trống
+                    if (!seatsStr.isEmpty() && !status.isEmpty()) {
+                        int seats = Integer.parseInt(seatsStr);
+                        // Sử dụng trạng thái người dùng nhập
+                        db.insertTable(seats, status);
+                        loadTables();
+                    } else {
+                        // Cập nhật lại thông báo cho rõ ràng
+                        Toast.makeText(this, "Vui lòng điền đủ thông tin!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Huỷ", null)
+                .show();
+    }
+
+    private void showEditDialog(int position) {
+        Table table = tableList.get(position);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table, null);
+        EditText edtSeats = dialogView.findViewById(R.id.edtSeats);
+        EditText edtStatus = dialogView.findViewById(R.id.edtStatus);
+
+        edtSeats.setText(String.valueOf(table.getSeats()));
+        edtStatus.setText(table.getStatus());
+
+        new AlertDialog.Builder(this)
+                .setTitle("Sửa thông tin bàn")
+                .setView(dialogView)
+                .setPositiveButton("Cập nhật", (dialog, which) -> {
+                    String seatsStr = edtSeats.getText().toString().trim();
+                    String status = edtStatus.getText().toString().trim();
+                    if (!seatsStr.isEmpty() && !status.isEmpty()) {
+                        int seats = Integer.parseInt(seatsStr);
+                        db.updateTable(table.getId(), seats, status);
+                        loadTables();
+                    } else {
+                        Toast.makeText(this, "Điền đủ thông tin!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Huỷ", null)
+                .show();
+    }
+
+    private void deleteTable(int position) {
+        Table table = tableList.get(position);
+        new AlertDialog.Builder(this)
+                .setTitle("Xác nhận xoá bàn?")
+                .setMessage("Bạn chắc chắn muốn xoá bàn " + table.getId() + "?")
+                .setPositiveButton("Xoá", (dialog, which) -> {
+                    db.deleteTable(table.getId());
+                    loadTables();
+                })
+                .setNegativeButton("Huỷ", null)
+                .show();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         if (isOwner == 0) {
+            menu.findItem(R.id.menu_manage_items).setVisible(false);
             menu.findItem(R.id.menu_account).setVisible(false);
         }
         return true;
@@ -78,6 +191,10 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.menu_account && isOwner == 1) {
             startActivity(new Intent(this, AccountManagerActivity.class));
+            return true;
+
+        } else if (itemId == R.id.menu_manage_items && isOwner == 1) {
+            startActivity(new Intent(this, ManageItemsActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

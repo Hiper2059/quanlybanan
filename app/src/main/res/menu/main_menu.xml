@@ -16,4 +16,8 @@
         android:id="@+id/menu_account"
         android:title="QL tài khoản quản lý"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_manage_items"
+        android:title="Quản lý món ăn"
+        app:showAsAction="never" />
 </menu>
