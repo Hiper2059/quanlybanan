@@ -19,6 +19,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <!-- MainActivity: exported=true vì có intent-filter (launcher) -->
         <activity
             android:name=".activity.LoginActivity"
             android:exported="true">
@@ -30,11 +31,19 @@
         <activity android:name=".activity.MainActivity"
             android:label="Quản lý bàn ăn" />
 
+        <activity android:name=".activity.SelectMenuActivity"
+            android:label="Chọn món"/>
+        <activity android:name=".activity.ThanhToanActivity"
+            android:label="Thanh toán"/>
         <activity android:name=".activity.ManageItemsActivity"
             android:label="Quản lý món ăn"/>
         <activity
             android:name=".activity.AccountManagerActivity"
             android:label="Quản lý tài khoản" />
+        <activity
+            android:name=".activity.RevenueReportActivity"
+            android:label="Báo cáo doanh thu" />
+        <!-- Khai báo thêm activity khác nếu có -->
     </application>
 
 </manifest>

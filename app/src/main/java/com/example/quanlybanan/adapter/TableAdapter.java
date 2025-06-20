@@ -18,6 +18,7 @@ public class TableAdapter extends RecyclerView.Adapter<TableAdapter.ViewHolder> 
     public interface OnTableListener {
         void onEdit(int position);
         void onDelete(int position);
+        void onSelectMenu(int position); // Thêm phương thức để chọn món
     }
 
     public TableAdapter(ArrayList<Table> tables, OnTableListener listener) {
@@ -45,7 +46,7 @@ public class TableAdapter extends RecyclerView.Adapter<TableAdapter.ViewHolder> 
                     .setItems(new CharSequence[]{"Sửa", "Xoá", "Chọn món"}, (dialog, which) -> {
                         if (which == 0) listener.onEdit(position);
                         else if (which == 1) listener.onDelete(position);
-
+                        else listener.onSelectMenu(position); // Khi chọn món
                     })
                     .show();
             return true;

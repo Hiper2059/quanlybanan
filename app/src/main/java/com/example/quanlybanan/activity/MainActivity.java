@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.quanlybanan.R;
 import com.example.quanlybanan.adapter.TableAdapter;
 import com.example.quanlybanan.database.DBHelper;
+import com.example.quanlybanan.model.Item;
 import com.example.quanlybanan.model.Table;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
@@ -64,7 +65,10 @@ public class MainActivity extends AppCompatActivity {
             public void onDelete(int position) {
                 deleteTable(position);
             }
-
+            @Override
+            public void onSelectMenu(int position) {
+                handleTableSelection(position);
+            }
         });
 
         recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
@@ -96,6 +100,23 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
         }
         adapter.notifyDataSetChanged();
+    }
+
+    private void handleTableSelection(int position) {
+        Table selectedTable = tableList.get(position);
+
+        // SỬA DÒNG NÀY: Dùng equalsIgnoreCase để không phân biệt hoa/thường
+        if ("Đang có khách".equalsIgnoreCase(selectedTable.getStatus())) {
+            Toast.makeText(this, "Đang tải lại đơn hàng của bàn " + selectedTable.getId(), Toast.LENGTH_SHORT).show();
+
+            ArrayList<Item> savedItems = db.getItemsForTable(selectedTable.getId());
+            selectedTable.setItems(savedItems);
+            Log.d("MainActivity", "Bàn " + selectedTable.getId() + " có " + savedItems.size() + " món đã lưu.");
+        }
+
+        Intent intent = new Intent(MainActivity.this, SelectMenuActivity.class);
+        intent.putExtra("selectedTable", selectedTable);
+        startActivity(intent);
     }
 
     private void showAddDialog() {
@@ -162,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("Bạn chắc chắn muốn xoá bàn " + table.getId() + "?")
                 .setPositiveButton("Xoá", (dialog, which) -> {
                     db.deleteTable(table.getId());
+                    db.clearTableItems(table.getId());
                     loadTables();
                 })
                 .setNegativeButton("Huỷ", null)
@@ -174,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
         if (isOwner == 0) {
             menu.findItem(R.id.menu_manage_items).setVisible(false);
             menu.findItem(R.id.menu_account).setVisible(false);
+            menu.findItem(R.id.menu_revenue_report).setVisible(false);
         }
         return true;
     }
@@ -192,7 +215,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (itemId == R.id.menu_account && isOwner == 1) {
             startActivity(new Intent(this, AccountManagerActivity.class));
             return true;
-
+        } else if (itemId == R.id.menu_revenue_report && isOwner == 1) {
+            startActivity(new Intent(this, RevenueReportActivity.class));
+            return true;
         } else if (itemId == R.id.menu_manage_items && isOwner == 1) {
             startActivity(new Intent(this, ManageItemsActivity.class));
             return true;

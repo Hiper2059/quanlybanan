@@ -17,6 +17,10 @@
         android:title="QL tài khoản quản lý"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_revenue_report"
+        android:title="Báo cáo doanh thu"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_manage_items"
         android:title="Quản lý món ăn"
         app:showAsAction="never" />
